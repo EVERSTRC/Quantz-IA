@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantz-IA | Whale Flow & Next Move Terminal</title>
+    <title>Quantz-IA | Pro Quantitative Engine</title>
     <style>
         :root {
             --bg-color: #0b0e14;
@@ -11,6 +11,7 @@
             --accent-green: #00c853;
             --accent-red: #ff3d00;
             --accent-blue: #29b6f6;
+            --accent-gold: #ffd600;
             --text-color: #e0e6ed;
             --subtext-color: #90a4ae;
             --border-color: #232936;
@@ -33,23 +34,24 @@
             margin-bottom: 20px;
         }
 
-        h1 { margin: 0; font-size: 1.5rem; color: #ffffff; }
+        h1 { margin: 0; font-size: 1.4rem; color: #ffffff; }
 
-        .grid-top {
+        .signal-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
             margin-bottom: 20px;
         }
 
-        .grid-bottom {
+        .main-layout {
             display: grid;
-            grid-template-columns: 3fr 1fr;
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
         }
 
         @media (max-width: 1024px) {
-            .grid-top, .grid-bottom { grid-template-columns: 1fr; }
+            .signal-grid { grid-template-columns: 1fr 1fr; }
+            .main-layout { grid-template-columns: 1fr; }
         }
 
         .card {
@@ -61,23 +63,34 @@
 
         .card h2 {
             margin-top: 0;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--subtext-color);
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* Tabla de Órdenes en Vivo */
+        .metric-val {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .buy-color { color: var(--accent-green); }
+        .sell-color { color: var(--accent-red); }
+        .neutral-color { color: var(--accent-gold); }
+
         .table-wrapper {
-            max-height: 280px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         th, td {
@@ -88,106 +101,115 @@
 
         th { color: var(--subtext-color); position: sticky; top: 0; background: var(--card-bg); }
 
-        .buy-row { color: var(--accent-green); font-weight: bold; }
-        .sell-row { color: var(--accent-red); font-weight: bold; }
-
-        /* Matriz de Predicción */
-        .prediction-box {
-            background: #1c2230;
-            border-left: 4px solid var(--accent-blue);
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 0 4px 4px 0;
-            font-size: 0.85rem;
-        }
-
-        .prediction-title { font-weight: bold; color: #fff; display: block; margin-bottom: 4px; }
-
         .badge {
             background: #232936;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
-        .tradingview-widget-container { height: 500px; width: 100%; }
-        .fg-image { width: 100%; max-width: 240px; border-radius: 8px; display: block; margin: 0 auto; }
+        .btn-refresh {
+            background: var(--accent-blue);
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-refresh:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🐋 Quantz-IA | Detector de Huella & Próximo Movimiento</h1>
-        <span id="ws-status" class="badge" style="color: var(--accent-green);">🟢 WebSocket Activo</span>
+        <h1>🤖 Quantz-IA | Motor Cuantitativo & IA de Decisión</h1>
+        <div>
+            <button class="btn-refresh" onclick="initEngine()">Recalcular Algoritmo 🔄</button>
+            <span id="engine-status" class="badge" style="color: var(--accent-green); margin-left: 10px;">🟢 Motor Conectado</span>
+        </div>
     </header>
 
-    <!-- Fila Superior: Escáner de Órdenes en Tiempo Real + Matriz de Predicción -->
-    <div class="grid-top">
-        
-        <!-- Escáner WebSocket -->
+    <!-- Métricas del Motor Cuantitativo (Señales Operativas) -->
+    <div class="signal-grid">
         <div class="card">
-            <h2>Escáner en Vivo: Compras/Ventas > $100,000 USD (Binance)</h2>
+            <h2>1. Precio / Tendencia IA</h2>
+            <div id="ai-bias" class="metric-val neutral-color">ANALIZANDO...</div>
+            <span id="btc-price" style="font-size: 0.85rem; color: var(--subtext-color);">BTC: $0.00</span>
+        </div>
+
+        <div class="card">
+            <h2>2. Punto de Entrada (ENTRY)</h2>
+            <div id="ai-entry" class="metric-val">$0.00</div>
+            <span style="font-size: 0.75rem; color: var(--subtext-color);">Zona de Reacción / Confirmación</span>
+        </div>
+
+        <div class="card">
+            <h2>3. Stop Loss (SL)</h2>
+            <div id="ai-sl" class="metric-val sell-color">$0.00</div>
+            <span style="font-size: 0.75rem; color: var(--subtext-color);">Invalidez de Liquidez Ballena</span>
+        </div>
+
+        <div class="card">
+            <h2>4. Take Profit (TP)</h2>
+            <div id="ai-tp" class="metric-val buy-color">$0.00</div>
+            <span style="font-size: 0.75rem; color: var(--subtext-color);">Objetivo Ratio 1:2 Min.</span>
+        </div>
+    </div>
+
+    <!-- Layout Principal -->
+    <div class="main-layout">
+        
+        <!-- Izquierda: Soportes y Resistencias + Gráfico -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="card">
+                <h2>Niveles de Liquidez Detectados (Algoritmo Wyckoff/Pivots)</h2>
+                <div style="display: flex; justify-content: space-around; text-align: center; padding: 10px 0;">
+                    <div>
+                        <span style="color: var(--subtext-color); font-size: 0.8rem;">Resistencia Ballena (R1 - Venta)</span>
+                        <div id="res-level" class="metric-val sell-color" style="font-size: 1.1rem;">$0.00</div>
+                    </div>
+                    <div>
+                        <span style="color: var(--subtext-color); font-size: 0.8rem;">Soporte Ballena (S1 - Compra)</span>
+                        <div id="sup-level" class="metric-val buy-color" style="font-size: 1.1rem;">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de TradingView integrando datos de Binance -->
+            <div class="card" style="height: 450px;">
+                <h2>Gráfico Cuantitativo en Vivo (BTC/USDT 1h)</h2>
+                <div id="tradingview_chart" style="height: 390px; width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Derecha: Escáner de Compras/Ventas masivas en tiempo real -->
+        <div class="card">
+            <h2>Flujo WebSocket: Órdenes > $100,000 USD</h2>
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
                             <th>Hora</th>
-                            <th>Par</th>
                             <th>Tipo</th>
-                            <th>Precio USD</th>
-                            <th>Monto Total (USD)</th>
+                            <th>Precio</th>
+                            <th>Monto USD</th>
                         </tr>
                     </thead>
                     <tbody id="whale-trades">
-                        <!-- Las órdenes en vivo se insertarán aquí dinámicamente -->
+                        <!-- Transacciones del WebSocket -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Predictor de Próximo Movimiento -->
-        <div class="card">
-            <h2>Matriz: ¿Cuál es el próximo movimiento?</h2>
-            
-            <div class="prediction-box">
-                <span class="prediction-title"> Escenario A: Absorción Alcista</span>
-                Barrido de compras masivas en soporte + Miedo Extremo = <strong>Inminente rebote al alza (Pump).</strong>
-            </div>
-
-            <div class="prediction-box" style="border-left-color: var(--accent-red);">
-                <span class="prediction-title"> Escenario B: Distribución / Trampa</span>
-                Ventas grandes en resistencia + Codicia Extrema = <strong>Caída o cacería de Stop Loss (Dump).</strong>
-            </div>
-
-            <div class="prediction-box" style="border-left-color: #ffd600;">
-                <span class="prediction-title"> Escenario C: Trampa de Liquidez</span>
-                Órdenes gigantes sin romper niveles = <strong>Manipulación lateral para acumular.</strong>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Fila Inferior: Gráfico Técnico + Sentimiento -->
-    <div class="grid-bottom">
-        <div class="card">
-            <h2>Gráfico en Vivo & Zonas de Reacción (BTC/USDT)</h2>
-            <div class="tradingview-widget-container">
-                <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Miedo y Codicia</h2>
-            <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Fear & Greed Index" class="fg-image">
-            <p style="font-size: 0.75rem; color: var(--subtext-color); text-align: center; margin-top: 15px;">
-                Si el escáner muestra compras masivas mientras el índice está en <strong>Miedo Extremo</strong>, las ballenas están absorbiendo el mercado.
-            </p>
-        </div>
-    </div>
-
-    <!-- TradingView Script -->
+    <!-- Scripts Oficiales y Lógica Algorítmica -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script type="text/javascript">
+    <script>
+        // Carga inicial de TradingView
         new TradingView.widget({
             "autosize": true,
             "symbol": "BINANCE:BTCUSDT",
@@ -203,10 +225,82 @@
             "studies": ["STD;Volume"]
         });
 
-        // --- CONEXIÓN WEBSOCKET BINANCE EN TIEMPO REAL ---
-        const wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade/solusdt@trade";
+        let currentPrice = 0;
+
+        // --- 1. MOTOR DE INTELIGENCIA DE DATOS DE BINANCE (REST API) ---
+        async function initEngine() {
+            document.getElementById('ai-bias').innerText = "CALCULANDO...";
+            document.getElementById('ai-bias').className = "metric-val neutral-color";
+
+            try {
+                // Obtener las últimas 100 velas de 1 Hora directamente de Binance
+                const response = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100');
+                const data = await response.json();
+
+                let highs = [];
+                let lows = [];
+                let closes = [];
+
+                data.forEach(candle => {
+                    highs.push(parseFloat(candle[2]));
+                    lows.push(parseFloat(candle[3]));
+                    closes.push(parseFloat(candle[4]));
+                });
+
+                currentPrice = closes[closes.length - 1];
+                document.getElementById('btc-price').innerText = `BTC: $${currentPrice.toLocaleString()}`;
+
+                // Algoritmo para encontrar Máximos y Mínimos relevantes (Soportes y Resistencias)
+                const maxHigh = Math.max(...highs.slice(-48)); // Máximo de 48h
+                const minLow = Math.min(...lows.slice(-48));   // Mínimo de 48h
+
+                document.getElementById('res-level').innerText = `$${maxHigh.toLocaleString()}`;
+                document.getElementById('sup-level').innerText = `$${minLow.toLocaleString()}`;
+
+                // Lógica de Decisión IA
+                const distToSupport = ((currentPrice - minLow) / currentPrice) * 100;
+                const distToRes = ((maxHigh - currentPrice) / currentPrice) * 100;
+
+                let bias = "NEUTRAL";
+                let entry = 0;
+                let sl = 0;
+                let tp = 0;
+
+                if (distToSupport < distToRes) {
+                    // El precio está cerca del soporte (Buscamos Acumulación / Long)
+                    bias = "COMPRA (LONG)";
+                    entry = currentPrice;
+                    sl = minLow * 0.995; // 0.5% por debajo del mínimo de la ballena
+                    const risk = entry - sl;
+                    tp = entry + (risk * 2.2); // Target con Ratio R:R 1:2.2
+
+                    document.getElementById('ai-bias').className = "metric-val buy-color";
+                } else {
+                    // El precio está cerca de la resistencia (Buscamos Distribución / Short)
+                    bias = "VENTA (SHORT)";
+                    entry = currentPrice;
+                    sl = maxHigh * 1.005; // 0.5% por encima de la resistencia
+                    const risk = sl - entry;
+                    tp = entry - (risk * 2.2);
+
+                    document.getElementById('ai-bias').className = "metric-val sell-color";
+                }
+
+                // Renderizar la señal en pantalla
+                document.getElementById('ai-bias').innerText = bias;
+                document.getElementById('ai-entry').innerText = `$${Math.round(entry).toLocaleString()}`;
+                document.getElementById('ai-sl').innerText = `$${Math.round(sl).toLocaleString()}`;
+                document.getElementById('ai-tp').innerText = `$${Math.round(tp).toLocaleString()}`;
+
+            } catch (error) {
+                console.error("Error cargando API Binance:", error);
+                document.getElementById('ai-bias').innerText = "ERROR API";
+            }
+        }
+
+        // --- 2. WEBSOCKET DE TRANSACCIONES DE BALLENAS ---
+        const wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade";
         const socket = new WebSocket(wsUrl);
-        const minUsdValue = 100000; // Filtrar solo operaciones mayores a $100,000 USD
 
         socket.onmessage = function(event) {
             const trade = JSON.parse(event.data);
@@ -214,39 +308,31 @@
             const qty = parseFloat(trade.q);
             const totalUSD = price * qty;
 
-            if (totalUSD >= minUsdValue) {
-                const isMarketMakerSell = trade.m; // true = venta ejecutada en mercado, false = compra ejecutada
-                const type = isMarketMakerSell ? "SELL (Venta)" : "BUY (Compra)";
-                const rowClass = isMarketMakerSell ? "sell-row" : "buy-row";
+            if (totalUSD >= 100000) { // Filtrar órdenes > $100k USD
+                const isMarketMakerSell = trade.m;
+                const type = isMarketMakerSell ? "SELL" : "BUY";
+                const rowClass = isMarketMakerSell ? "sell-color" : "buy-color";
                 const timeStr = new Date(trade.T).toLocaleTimeString();
-                const symbol = trade.s.replace('USDT', '/USDT');
 
                 const tableBody = document.getElementById('whale-trades');
                 const newRow = document.createElement('tr');
-                newRow.className = rowClass;
 
                 newRow.innerHTML = `
                     <td>${timeStr}</td>
-                    <td>${symbol}</td>
-                    <td>${type}</td>
-                    <td>$${price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="${rowClass}"><strong>${type}</strong></td>
+                    <td>$${price.toLocaleString()}</td>
                     <td>$${Math.round(totalUSD).toLocaleString()}</td>
                 `;
 
-                // Insertar al inicio de la tabla
                 tableBody.insertBefore(newRow, tableBody.firstChild);
-
-                // Limitar la tabla a un máximo de 15 filas
-                if (tableBody.children.length > 15) {
+                if (tableBody.children.length > 12) {
                     tableBody.removeChild(tableBody.lastChild);
                 }
             }
         };
 
-        socket.onerror = function() {
-            document.getElementById('ws-status').innerText = "🔴 Error de Conexión";
-            document.getElementById('ws-status').style.color = "var(--accent-red)";
-        };
+        // Ejecutar algoritmo al cargar la página
+        window.onload = initEngine;
     </script>
 </body>
 </html>
