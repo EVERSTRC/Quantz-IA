@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantz-IA | Whale & Market Decision Dashboard</title>
+    <title>Quantz-IA | Whale Flow & Next Move Terminal</title>
     <style>
         :root {
             --bg-color: #0b0e14;
@@ -35,24 +35,21 @@
 
         h1 { margin: 0; font-size: 1.5rem; color: #ffffff; }
 
-        .dashboard-grid {
+        .grid-top {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
 
-        .main-layout {
+        .grid-bottom {
             display: grid;
             grid-template-columns: 3fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
         }
 
         @media (max-width: 1024px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
+            .grid-top, .grid-bottom { grid-template-columns: 1fr; }
         }
 
         .card {
@@ -71,42 +68,40 @@
             margin-bottom: 12px;
         }
 
-        .tool-link {
-            display: inline-block;
-            margin-top: 5px;
-            padding: 6px 12px;
-            background-color: #1e2532;
-            color: var(--accent-blue);
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
+        /* Tabla de Órdenes en Vivo */
+        .table-wrapper {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 0.85rem;
-            transition: background 0.2s;
         }
 
-        .tool-link:hover {
-            background-color: #2a3447;
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        /* Responsive Container para TradingView */
-        .tradingview-widget-container {
-            height: 550px;
-            width: 100%;
+        th { color: var(--subtext-color); position: sticky; top: 0; background: var(--card-bg); }
+
+        .buy-row { color: var(--accent-green); font-weight: bold; }
+        .sell-row { color: var(--accent-red); font-weight: bold; }
+
+        /* Matriz de Predicción */
+        .prediction-box {
+            background: #1c2230;
+            border-left: 4px solid var(--accent-blue);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.85rem;
         }
 
-        .fg-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 0;
-        }
-
-        .fg-image {
-            width: 100%;
-            max-width: 280px;
-            border-radius: 8px;
-        }
+        .prediction-title { font-weight: bold; color: #fff; display: block; margin-bottom: 4px; }
 
         .badge {
             background: #232936;
@@ -114,92 +109,144 @@
             border-radius: 4px;
             font-size: 0.8rem;
         }
+
+        .tradingview-widget-container { height: 500px; width: 100%; }
+        .fg-image { width: 100%; max-width: 240px; border-radius: 8px; display: block; margin: 0 auto; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🐋 Quantz-IA | Decision Terminal</h1>
-        <span class="badge">🟢 Mercado en Vivo</span>
+        <h1>🐋 Quantz-IA | Detector de Huella & Próximo Movimiento</h1>
+        <span id="ws-status" class="badge" style="color: var(--accent-green);">🟢 WebSocket Activo</span>
     </header>
 
-    <!-- Enlaces Rápidos a Herramientas On-Chain -->
-    <div class="dashboard-grid">
+    <!-- Fila Superior: Escáner de Órdenes en Tiempo Real + Matriz de Predicción -->
+    <div class="grid-top">
+        
+        <!-- Escáner WebSocket -->
         <div class="card">
-            <h2>1. Rastreo Billeteras</h2>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">Identifica transferencias directas de ballenas.</p>
-            <a href="https://platform.arkhamintelligence.com" target="_blank" class="tool-link">Abrir Arkham ↗</a>
+            <h2>Escáner en Vivo: Compras/Ventas > $100,000 USD (Binance)</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Par</th>
+                            <th>Tipo</th>
+                            <th>Precio USD</th>
+                            <th>Monto Total (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="whale-trades">
+                        <!-- Las órdenes en vivo se insertarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- Predictor de Próximo Movimiento -->
         <div class="card">
-            <h2>2. Mapa de Liquidez</h2>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">Encuentra zonas donde buscarán Stop Loss.</p>
-            <a href="https://www.coinglass.com/pro/liquidation/heatmap" target="_blank" class="tool-link">Abrir Coinglass ↗</a>
+            <h2>Matriz: ¿Cuál es el próximo movimiento?</h2>
+            
+            <div class="prediction-box">
+                <span class="prediction-title"> Escenario A: Absorción Alcista</span>
+                Barrido de compras masivas en soporte + Miedo Extremo = <strong>Inminente rebote al alza (Pump).</strong>
+            </div>
+
+            <div class="prediction-box" style="border-left-color: var(--accent-red);">
+                <span class="prediction-title"> Escenario B: Distribución / Trampa</span>
+                Ventas grandes en resistencia + Codicia Extrema = <strong>Caída o cacería de Stop Loss (Dump).</strong>
+            </div>
+
+            <div class="prediction-box" style="border-left-color: #ffd600;">
+                <span class="prediction-title"> Escenario C: Trampa de Liquidez</span>
+                Órdenes gigantes sin romper niveles = <strong>Manipulación lateral para acumular.</strong>
+            </div>
         </div>
-        <div class="card">
-            <h2>3. Flujos de Exchange</h2>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">Mide entradas (*Inflow*) y salidas (*Outflow*).</p>
-            <a href="https://cryptoquant.com" target="_blank" class="tool-link">Abrir CryptoQuant ↗</a>
-        </div>
+
     </div>
 
-    <!-- Layout Principal: Gráfico Técnico + Sentimiento de Mercado -->
-    <div class="main-layout">
-        
-        <!-- Gráfico en Vivo TradingView -->
+    <!-- Fila Inferior: Gráfico Técnico + Sentimiento -->
+    <div class="grid-bottom">
         <div class="card">
-            <h2>Análisis Técnico & Volumen (BTC/USDT)</h2>
+            <h2>Gráfico en Vivo & Zonas de Reacción (BTC/USDT)</h2>
             <div class="tradingview-widget-container">
                 <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
 
-        <!-- Columna de Indicadores de Sentimiento -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            
-            <!-- Fear & Greed Index -->
-            <div class="card">
-                <h2>Sentimiento: Fear & Greed</h2>
-                <div class="fg-container">
-                    <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Crypto Fear and Greed Index" class="fg-image">
-                </div>
-                <p style="font-size: 0.75rem; color: var(--subtext-color); text-align: center; margin-top: 5px;">
-                    • <strong>Miedo Extremo:</strong> Posible zona de acumulación/compra.<br>
-                    • <strong>Codicia Extrema:</strong> Posible zona de distribución/venta.
-                </p>
-            </div>
-
-            <!-- Reglas de Confirmación Rápida -->
-            <div class="card">
-                <h2>Checklist de Decisión</h2>
-                <ul style="font-size: 0.8rem; padding-left: 15px; color: var(--text-color); margin: 0;">
-                    <li style="margin-bottom: 8px;"><strong>¿Buscar Compra?:</strong> Barrido de liquidez bajo soporte + Miedo Extremo + Retiro de Exchange.</li>
-                    <li><strong>¿Buscar Venta?:</strong> Rompimiento de resistencia sin volumen + Codicia Extrema + Depósitos masivos a Exchanges.</li>
-                </ul>
-            </div>
-
+        <div class="card">
+            <h2>Miedo y Codicia</h2>
+            <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Fear & Greed Index" class="fg-image">
+            <p style="font-size: 0.75rem; color: var(--subtext-color); text-align: center; margin-top: 15px;">
+                Si el escáner muestra compras masivas mientras el índice está en <strong>Miedo Extremo</strong>, las ballenas están absorbiendo el mercado.
+            </p>
         </div>
     </div>
 
-    <!-- Widget Oficial de TradingView Script -->
+    <!-- TradingView Script -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script type="text/javascript">
         new TradingView.widget({
             "autosize": true,
             "symbol": "BINANCE:BTCUSDT",
-            "interval": "240",
+            "interval": "60",
             "timezone": "Etc/UTC",
             "theme": "dark",
             "style": "1",
             "locale": "es",
             "toolbar_bg": "#151922",
             "enable_publishing": false,
-            "hide_side_toolbar": false,
             "allow_symbol_change": true,
             "container_id": "tradingview_chart",
-            "studies": [
-                "STD;Volume"
-            ]
+            "studies": ["STD;Volume"]
         });
+
+        // --- CONEXIÓN WEBSOCKET BINANCE EN TIEMPO REAL ---
+        const wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade/solusdt@trade";
+        const socket = new WebSocket(wsUrl);
+        const minUsdValue = 100000; // Filtrar solo operaciones mayores a $100,000 USD
+
+        socket.onmessage = function(event) {
+            const trade = JSON.parse(event.data);
+            const price = parseFloat(trade.p);
+            const qty = parseFloat(trade.q);
+            const totalUSD = price * qty;
+
+            if (totalUSD >= minUsdValue) {
+                const isMarketMakerSell = trade.m; // true = venta ejecutada en mercado, false = compra ejecutada
+                const type = isMarketMakerSell ? "SELL (Venta)" : "BUY (Compra)";
+                const rowClass = isMarketMakerSell ? "sell-row" : "buy-row";
+                const timeStr = new Date(trade.T).toLocaleTimeString();
+                const symbol = trade.s.replace('USDT', '/USDT');
+
+                const tableBody = document.getElementById('whale-trades');
+                const newRow = document.createElement('tr');
+                newRow.className = rowClass;
+
+                newRow.innerHTML = `
+                    <td>${timeStr}</td>
+                    <td>${symbol}</td>
+                    <td>${type}</td>
+                    <td>$${price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td>$${Math.round(totalUSD).toLocaleString()}</td>
+                `;
+
+                // Insertar al inicio de la tabla
+                tableBody.insertBefore(newRow, tableBody.firstChild);
+
+                // Limitar la tabla a un máximo de 15 filas
+                if (tableBody.children.length > 15) {
+                    tableBody.removeChild(tableBody.lastChild);
+                }
+            }
+        };
+
+        socket.onerror = function() {
+            document.getElementById('ws-status').innerText = "🔴 Error de Conexión";
+            document.getElementById('ws-status').style.color = "var(--accent-red)";
+        };
     </script>
 </body>
 </html>
