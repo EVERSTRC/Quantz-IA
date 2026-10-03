@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantz-IA | Systemic BTC/USD Quantitative Engine</title>
+    <title>Quantz-IA | Motor Mecánico BTC/USD</title>
     <style>
         :root {
             --bg-color: #0b0e14;
@@ -68,6 +68,19 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        /* Animación de Parpadeo cuando la confluencia es >= 75% */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 10px rgba(0, 200, 83, 0.4); border-color: #00c853; }
+            50% { box-shadow: 0 0 25px rgba(0, 200, 83, 0.9); border-color: #00e676; }
+            100% { box-shadow: 0 0 10px rgba(0, 200, 83, 0.4); border-color: #00c853; }
+        }
+
+        .alert-active {
+            animation: pulse-green 1.2s infinite;
+            background-color: #0d2818 !important;
         }
 
         .decision-title {
@@ -171,7 +184,15 @@
             cursor: pointer;
         }
 
-        .btn-refresh:hover { opacity: 0.9; }
+        .btn-audio {
+            background: #232936;
+            color: var(--accent-gold);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         .checklist-item {
             display: flex;
@@ -188,6 +209,7 @@
         <h1>🤖 Quantz-IA | Motor Mecánico BTC/USD</h1>
         
         <div class="timeframe-container">
+            <button id="audio-toggle" class="btn-audio" onclick="enableAudio()">🔔 Activar Sonido</button>
             <label for="timeframe-select" style="font-size: 0.9rem; color: var(--subtext-color);">Temporalidad:</label>
             <select id="timeframe-select" onchange="changeTimeframe()">
                 <option value="15m" selected>15 Minutos (Scalping)</option>
@@ -200,7 +222,7 @@
         </div>
     </header>
 
-    <!-- BANNER DE DECISIÓN AUTOMÁTICA (SISTEMA MECÁNICO) -->
+    <!-- BANNER DE DECISIÓN AUTOMÁTICA -->
     <div id="decision-card" class="decision-banner">
         <div>
             <div class="decision-title">Orden de Ejecución Algorítmica</div>
@@ -212,7 +234,7 @@
         </div>
     </div>
 
-    <!-- Métricas Operativas de Entrada / Salida -->
+    <!-- Métricas Operativas -->
     <div class="signal-grid">
         <div class="card">
             <h2>1. Tendencia (<span class="tf-label">15m</span>)</h2>
@@ -242,9 +264,7 @@
     <!-- Layout Principal -->
     <div class="main-layout">
         
-        <!-- Izquierda: Soportes/Resistencias + Gráfico + Checklist -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
-            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="card">
                     <h2>Niveles de Liquidez (<span class="tf-label">15m</span>)</h2>
@@ -260,7 +280,6 @@
                     </div>
                 </div>
 
-                <!-- Checklist de Filtros de Confluencia -->
                 <div class="card">
                     <h2>Filtros de Confluencia IA</h2>
                     <div class="checklist-item">
@@ -282,16 +301,14 @@
                 </div>
             </div>
 
-            <!-- Gráfico Dinámico TradingView -->
             <div class="card" style="height: 420px;">
                 <h2>Gráfico Técnico (BTC/USD - <span class="tf-label">15m</span>)</h2>
                 <div id="tv_chart_container" style="height: 360px; width: 100%;"></div>
             </div>
         </div>
 
-        <!-- Derecha: Escáner WebSocket -->
         <div class="card">
-            <h2>Flujo WebSocket: Órdenes BTC/USD > $100k</h2>
+            <h2>Flujo WebSocket: Órdenes BTC/USD > $100K</h2>
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -303,7 +320,6 @@
                         </tr>
                     </thead>
                     <tbody id="whale-trades">
-                        <!-- Transacciones del WebSocket -->
                     </tbody>
                 </table>
             </div>
@@ -311,7 +327,7 @@
 
     </div>
 
-    <!-- Scripts Oficiales y Lógica Algorítmica Completa -->
+    <!-- Script TradingView y Lógica Algorítmica con Alerta Sonora -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         let currentInterval = "15m";
@@ -319,6 +335,46 @@
         let currentPrice = 0;
         let recentWhaleBuyVolume = 0;
         let recentWhaleSellVolume = 0;
+        
+        let audioContext = null;
+        let audioEnabled = false;
+        let lastAlertState = false;
+
+        // Función para inicializar el sintetizador de sonido del navegador
+        function enableAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            audioEnabled = true;
+            const btn = document.getElementById('audio-toggle');
+            btn.innerText = "🔊 Sonido Activo";
+            btn.style.color = "var(--accent-green)";
+            
+            // Sonido de prueba corto
+            playTriggerSound();
+        }
+
+        // Tono de alerta sonora triple (Beep-Beep-Beep)
+        function playTriggerSound() {
+            if (!audioEnabled || !audioContext) return;
+
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(880, now); // Nota A5
+            osc.frequency.setValueAtTime(1174.66, now + 0.15); // Nota D6
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
 
         const intervalMap = {
             "15m": { binance: "15m", tv: "15", label: "15m" },
@@ -360,7 +416,6 @@
             initEngine();
         }
 
-        // --- CÁLCULO DE INDICADORES MATEMÁTICOS ---
         function calculateRSI(closes, period = 14) {
             let gains = 0, losses = 0;
             for (let i = closes.length - period; i < closes.length; i++) {
@@ -384,7 +439,6 @@
             return ema;
         }
 
-        // --- MOTOR CUANTITATIVO CON SISTEMA DE CONFLUENCIA MECÁNICA ---
         async function initEngine() {
             try {
                 const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=100`);
@@ -406,10 +460,8 @@
                 document.getElementById('res-level').innerText = `$${maxHigh.toLocaleString()}`;
                 document.getElementById('sup-level').innerText = `$${minLow.toLocaleString()}`;
 
-                // Indicadores
                 const rsi = calculateRSI(closes, 14);
                 const ema50 = calculateEMA(closes, 50);
-                const ema200 = calculateEMA(closes, 100); // 100 periodos para referencia rápida
 
                 const distToSupport = ((currentPrice - minLow) / currentPrice) * 100;
                 const distToRes = ((maxHigh - currentPrice) / currentPrice) * 100;
@@ -418,11 +470,7 @@
                 let entry = currentPrice;
                 let sl = 0;
                 let tp = 0;
-                let slPadding = 0.005;
-
-                if (currentInterval === "15m") slPadding = 0.003;
-                if (currentInterval === "4h")  slPadding = 0.01;
-                if (currentInterval === "1d")  slPadding = 0.02;
+                let slPadding = 0.003;
 
                 let isLong = distToSupport < distToRes;
 
@@ -445,10 +493,9 @@
                 document.getElementById('ai-sl').innerText = `$${Math.round(sl).toLocaleString()}`;
                 document.getElementById('ai-tp').innerText = `$${Math.round(tp).toLocaleString()}`;
 
-                // --- EVALUACIÓN DE LOS 4 FILTROS DE CONFLUENCIA ---
+                // --- EVALUACIÓN DE CONFLUENCIA CON ACTIVACIÓN DE ALERTA ---
                 let confidencePoints = 0;
 
-                // Filtro 1: Proximidad a Soporte o Resistencia
                 if (distToSupport < 0.8 || distToRes < 0.8) {
                     confidencePoints += 25;
                     document.getElementById('check-liquidity').innerText = "✅ EN ZONA";
@@ -458,7 +505,6 @@
                     document.getElementById('check-liquidity').style.color = "var(--accent-gold)";
                 }
 
-                // Filtro 2: Confirmación de Tendencia EMA
                 if ((isLong && currentPrice > ema50) || (!isLong && currentPrice < ema50)) {
                     confidencePoints += 25;
                     document.getElementById('check-ema').innerText = "✅ ALINEADA";
@@ -468,7 +514,6 @@
                     document.getElementById('check-ema').style.color = "var(--accent-red)";
                 }
 
-                // Filtro 3: RSI en zona óptima (No sobrecomprado en Long, No sobrevendido en Short)
                 if ((isLong && rsi < 65) || (!isLong && rsi > 35)) {
                     confidencePoints += 25;
                     document.getElementById('check-rsi').innerText = `✅ ESPACIO (RSI: ${Math.round(rsi)})`;
@@ -478,7 +523,6 @@
                     document.getElementById('check-rsi').style.color = "var(--accent-gold)";
                 }
 
-                // Filtro 4: Presión WebSocket
                 if ((isLong && recentWhaleBuyVolume >= recentWhaleSellVolume) || (!isLong && recentWhaleSellVolume >= recentWhaleBuyVolume)) {
                     confidencePoints += 25;
                     document.getElementById('check-ws').innerText = "✅ FLUJO A FAVOR";
@@ -488,28 +532,41 @@
                     document.getElementById('check-ws').style.color = "var(--accent-gold)";
                 }
 
-                // Renderizar Resultados Mecánicos
                 const confPill = document.getElementById('ai-confidence');
                 const actionDiv = document.getElementById('ai-action');
                 const decisionCard = document.getElementById('decision-card');
 
                 confPill.innerText = `${confidencePoints}%`;
 
+                // --- DISPARO DE ALERTA SONORA Y VISUAL ---
                 if (confidencePoints >= 75) {
                     actionDiv.innerText = `🚀 EJECUTAR ${bias}`;
                     actionDiv.className = "decision-status buy-color";
                     confPill.className = "confidence-pill buy-color";
-                    decisionCard.style.borderColor = "var(--accent-green)";
-                } else if (confidencePoints >= 50) {
-                    actionDiv.innerText = `⏳ ESPERAR CONFIRMACIÓN (${bias})`;
-                    actionDiv.className = "decision-status neutral-color";
-                    confPill.className = "confidence-pill neutral-color";
-                    decisionCard.style.borderColor = "var(--accent-gold)";
+                    
+                    // Activa borde con brillo animado
+                    decisionCard.classList.add('alert-active');
+
+                    // Emite la señal auditiva si cambia el estado
+                    if (!lastAlertState) {
+                        playTriggerSound();
+                        lastAlertState = true;
+                    }
                 } else {
-                    actionDiv.innerText = `⛔ NO OPERAR (MERCADO SIN CONFLUENCIA)`;
-                    actionDiv.className = "decision-status sell-color";
-                    confPill.className = "confidence-pill sell-color";
-                    decisionCard.style.borderColor = "var(--accent-red)";
+                    decisionCard.classList.remove('alert-active');
+                    lastAlertState = false;
+
+                    if (confidencePoints >= 50) {
+                        actionDiv.innerText = `⏳ ESPERAR CONFIRMACIÓN (${bias})`;
+                        actionDiv.className = "decision-status neutral-color";
+                        confPill.className = "confidence-pill neutral-color";
+                        decisionCard.style.borderColor = "var(--accent-gold)";
+                    } else {
+                        actionDiv.innerText = `⛔ NO OPERAR (SIN CONFLUENCIA)`;
+                        actionDiv.className = "decision-status sell-color";
+                        confPill.className = "confidence-pill sell-color";
+                        decisionCard.style.borderColor = "var(--accent-red)";
+                    }
                 }
 
             } catch (error) {
@@ -517,7 +574,10 @@
             }
         }
 
-        // --- WEBSOCKET PARA FLUJO DE BALLENAS ---
+        // Refresco automático cada 30 segundos
+        setInterval(initEngine, 30000);
+
+        // WebSocket de Volumen
         const wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade";
         const socket = new WebSocket(wsUrl);
 
